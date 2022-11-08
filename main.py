@@ -5,16 +5,16 @@ from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 
 aucs = []
-n_folds = 50
+n_folds = 10
+n_samples = 10_000
 
-for strategy in ("most_frequent", "uniform"):
+for strategy in ("most_frequent", "uniform", "prior"):
     print(f"--- Strategy: {strategy} ---")
-    print(f"{n_folds} AUCS:")
     for minority_class_prevalence in (0.1, 0.01, 0.001, 0.0001, 0.00001):
         for i in range(0, n_folds):
             # Generate 2 class dataset
             X, y = make_classification(
-                n_samples=10_000,
+                n_samples=n_samples,
                 n_classes=2,
                 weights=[1 - minority_class_prevalence, minority_class_prevalence],
                 random_state=i,
@@ -29,6 +29,7 @@ for strategy in ("most_frequent", "uniform"):
             model = DummyClassifier(strategy=strategy)
             model.fit(trainX, trainy)
             yhat = model.predict_proba(testX)
+
             naive_probs = yhat[:, 1]
 
             # calculate roc auc
@@ -39,5 +40,5 @@ for strategy in ("most_frequent", "uniform"):
         minority_class_prevalence = f"{minority_class_prevalence:.5f}"
 
         print(
-            f"Prevalence: {minority_class_prevalence} | AUC: {round(sum(aucs)/len(aucs), 2)}"
+            f"Prevalence: {minority_class_prevalence} | AUC: {round(sum(aucs)/len(aucs), 4)}"
         )
