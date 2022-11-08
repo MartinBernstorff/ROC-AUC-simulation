@@ -9,9 +9,10 @@ n_folds = 50
 
 for strategy in ("most_frequent", "uniform"):
     print(f"--- Strategy: {strategy} ---")
-    for minority_class_prevalence in (0.1, 0.01, 0.001, 0.0001):
+    print(f"{n_folds} AUCS:")
+    for minority_class_prevalence in (0.1, 0.01, 0.001, 0.0001, 0.00001):
         for i in range(0, n_folds):
-            # generate 2 class dataset
+            # Generate 2 class dataset
             X, y = make_classification(
                 n_samples=10_000,
                 n_classes=2,
@@ -19,13 +20,13 @@ for strategy in ("most_frequent", "uniform"):
                 random_state=i,
             )
 
-            # split into train/test sets with same class ratio
+            # Split into train/test sets with same class ratio
             trainX, testX, trainy, testy = train_test_split(
                 X, y, test_size=0.5, random_state=i, stratify=y
             )
 
-            # no skill model, stratified random class predictions
-            model = DummyClassifier(strategy="uniform")
+            # Naive models
+            model = DummyClassifier(strategy=strategy)
             model.fit(trainX, trainy)
             yhat = model.predict_proba(testX)
             naive_probs = yhat[:, 1]
@@ -34,5 +35,9 @@ for strategy in ("most_frequent", "uniform"):
             roc_auc = roc_auc_score(testy, naive_probs)
             aucs += [roc_auc]
 
-        print(f"Minority class prevalence: {minority_class_prevalence}")
-        print(f"{n_folds}-fold ROC-AUC: {round(sum(aucs)/len(aucs), 2)}")
+        # Force minority_class_prevalence to be a float with at least 5 decimals
+        minority_class_prevalence = f"{minority_class_prevalence:.5f}"
+
+        print(
+            f"Prevalence: {minority_class_prevalence} | AUC: {round(sum(aucs)/len(aucs), 2)}"
+        )
